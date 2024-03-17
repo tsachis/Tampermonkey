@@ -2,9 +2,11 @@
 // @name         Grafana expression search
 // @namespace    http://tampermonkey.net/
 // @version      2024-03-17
-// @description  Find expression usages in grafana panels
+// @description  try to take over the world!
 // @author       Tsachi Shushan
-// @match        https://grafana.*.com/d*
+// @downloadURL  https://raw.githubusercontent.com/tsachis/Tampermonkey/main/grafana-expression-search.js
+// @updateURL    https://raw.githubusercontent.com/tsachis/Tampermonkey/main/grafana-expression-search.js
+// @match        https://grafana.outbrain.com/d/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=grafana.com
 // @grant GM_addElement
 // @grant GM_addStyle
@@ -68,7 +70,7 @@
     function searchPanel(panel, searchTerm, results) {
         const { panels, ...rest } = panel;
         console.log(rest, searchTerm);
-        if (JSON.stringify(rest).includes(searchTerm)) {
+        if (JSON.stringify(rest)?.toLowerCase().includes(searchTerm.toLowerCase())) {
             results.push({title: rest.title});
         }
         if (panels) {
@@ -88,10 +90,9 @@
                 resultsList.appendChild(listItem);
             });
         }
-
     }
 
-    searchBtn.addEventListener('click', () => {
+    function performSearch() {
         const model = unsafeWindow.grafanaRuntime.getDashboardSaveModel();
         const searchTerm = searchInput.value;
         const panelResults = [];
@@ -101,10 +102,18 @@
 
         addResults('Panels', panelResults);
 
-        const templateResults = model.templating?.list.filter(t => JSON.stringify(t).includes(searchTerm)).map(t => ({title: t.label || t.name}));
+        const templateResults = model.templating?.list.filter(t => JSON.stringify(t).toLowerCase().includes(searchTerm.toLowerCase())).map(t => ({title: t.label || t.name}));
         addResults('Templates', templateResults);
-        const annotationsResults = model.annotations?.list.filter(a => JSON.stringify(a).includes(searchTerm)).map(a => ({title: a.label || a.name}));
+        const annotationsResults = model.annotations?.list.filter(a => JSON.stringify(a).toLowerCase().includes(searchTerm.toLowerCase())).map(a => ({title: a.label || a.name}));
         addResults('Annotations', templateResults);
+    }
+
+    searchBtn.addEventListener('click', performSearch);
+
+    searchInput.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            performSearch();
+        }
     });
 
     // Optional: an event listener to close the dialog when a click occurs outside of the dialog
