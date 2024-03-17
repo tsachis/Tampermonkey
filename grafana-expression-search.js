@@ -58,7 +58,8 @@
     const searchInput = document.getElementById('searchInput');
     const resultsList = document.getElementById('resultsList');
     GM_addElement(document.body, 'button', {
-        id: 'openDialog'
+        id: 'openDialog',
+        title: 'Expression Search'
     });
 
     const openDialog = document.getElementById('openDialog');
