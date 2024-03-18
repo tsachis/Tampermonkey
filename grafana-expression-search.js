@@ -41,6 +41,10 @@
     font-weight: bold;
     padding: 5px 0;
     }
+
+    .search-highlight {
+     box-shadow: 0 0 0px 2px rgba(200, 0, 0, .8);
+    }
     `);
 
     GM_addElement(document.body, 'dialog', {
@@ -70,9 +74,8 @@
 
     function searchPanel(panel, searchTerm, results) {
         const { panels, ...rest } = panel;
-        console.log(rest, searchTerm);
         if (JSON.stringify(rest)?.toLowerCase().includes(searchTerm.toLowerCase())) {
-            results.push({title: rest.title});
+            results.push(panel);
         }
         if (panels) {
             panels.forEach(p => searchPanel(p, searchTerm, results));
@@ -87,9 +90,28 @@
             resultsList.appendChild(listItem);
             results.forEach((result) => {
                 const listItem = document.createElement('li');
-                listItem.textContent = result.title;
+                listItem.textContent = result.title || result.label || result.name;
+                let selector = '';
+                switch (name) {
+                    case 'Panels':
+                        selector = `[data-panelid='${result.id}']`;
+                        break;
+                    case 'Templates':
+                        selector = `label[for="var-${result.name}"]`;
+                        break;
+                    case 'Annotations':
+                        break;
+                }
+                if (selector) {
+                    const highlightElm = document.querySelector(selector);
+                    if (highlightElm) {
+                        listItem.addEventListener('mouseleave', () => highlightElm.classList.remove('search-highlight'));
+                        listItem.addEventListener('mouseenter', () => highlightElm.classList.add('search-highlight'));
+                    }
+                }
                 resultsList.appendChild(listItem);
             });
+
         }
     }
 
@@ -103,10 +125,10 @@
 
         addResults('Panels', panelResults);
 
-        const templateResults = model.templating?.list.filter(t => JSON.stringify(t).toLowerCase().includes(searchTerm.toLowerCase())).map(t => ({title: t.label || t.name}));
+        const templateResults = model.templating?.list.filter(t => JSON.stringify(t).toLowerCase().includes(searchTerm.toLowerCase()));
         addResults('Templates', templateResults);
-        const annotationsResults = model.annotations?.list.filter(a => JSON.stringify(a).toLowerCase().includes(searchTerm.toLowerCase())).map(a => ({title: a.label || a.name}));
-        addResults('Annotations', templateResults);
+        const annotationsResults = model.annotations?.list.filter(a => JSON.stringify(a).toLowerCase().includes(searchTerm.toLowerCase()));
+        addResults('Annotations', annotationsResults);
     }
 
     searchBtn.addEventListener('click', performSearch);
